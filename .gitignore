@@ -1,0 +1,78 @@
+# =============================================================
+# Tally Prime AI — .gitignore
+# =============================================================
+
+# ─── SECRETS & CREDENTIALS (NEVER commit these) ───────────────
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cert
+secrets/
+credentials/
+
+# ─── NEON / DATABASE ──────────────────────────────────────────
+.neon
+
+# ─── PYTHON ───────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+pip-log.txt
+
+# ─── VIRTUAL ENVIRONMENTS ─────────────────────────────────────
+venv/
+.venv/
+env/
+ENV/
+.env/
+
+# ─── ALEMBIC (generated migration versions are fine to commit,
+#     but exclude the cache if any) ────────────────────────────
+alembic/__pycache__/
+
+# ─── UPLOADED DOCUMENTS (user data — never commit) ────────────
+storage/
+
+# ─── PYTEST / TESTING ─────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+*.log
+
+# ─── macOS ────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+*.swp
+*~
+
+# ─── EDITORS / IDEs ───────────────────────────────────────────
+.vscode/
+.idea/
+*.iml
+.gemini/
+
+# ─── NODE (if ever added) ─────────────────────────────────────
+node_modules/
+npm-debug.log*
+
+# ─── TEMP / LOGS ──────────────────────────────────────────────
+tmp/
+temp/
+*.tmp

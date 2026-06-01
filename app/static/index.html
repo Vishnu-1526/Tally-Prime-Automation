@@ -1,0 +1,1898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TallyPrime AI Invoice Voucher Automation</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-base: #02050a;
+            --bg-surface: #040a17;
+            --bg-card: rgba(8, 18, 38, 0.65);
+            --bg-card-hover: rgba(12, 28, 56, 0.85);
+            --border-color: rgba(2, 60, 108, 0.2);
+            
+            --primary: #023C6C;
+            --primary-glow: rgba(2, 60, 108, 0.15);
+            --accent: #66AC4C;
+            --accent-glow: rgba(102, 172, 76, 0.15);
+            
+            --success: #66AC4C;
+            --success-glow: rgba(102, 172, 76, 0.15);
+            --warning: #f59e0b;
+            --warning-glow: rgba(245, 158, 11, 0.15);
+            --error: #ff3838;
+            --error-glow: rgba(255, 56, 56, 0.15);
+            
+            --text-primary: #f8fafc;
+            --text-secondary: #d1d5db;
+            --text-muted: #8892b0;
+            
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(2, 60, 108, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(102, 172, 76, 0.06) 0px, transparent 50%);
+        }
+
+        /* Layout Structure */
+        header {
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(2, 5, 10, 0.85);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 1.25rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .brand-logo {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(2, 60, 108, 0.4);
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .brand-title h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            background: linear-gradient(135deg, #fff 40%, var(--text-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-title p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .status-indicators {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0.4rem 0.8rem;
+            border-radius: 2rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+        }
+
+        .indicator .dot {
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 50%;
+            background-color: var(--text-muted);
+            position: relative;
+        }
+
+        .indicator.online .dot {
+            background-color: var(--success);
+            box-shadow: 0 0 10px var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        .indicator.offline .dot {
+            background-color: var(--error);
+            box-shadow: 0 0 10px var(--error);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        /* Main Workspace Grid */
+        main {
+            padding: 2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 2rem;
+            height: calc(100vh - 80px);
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            height: 100%;
+            overflow-y: auto;
+            padding-right: 0.25rem;
+        }
+
+        .main-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            overflow-y: auto;
+            height: 100%;
+            padding-right: 0.25rem;
+        }
+
+        /* Common Glassmorphic Card base */
+        .glass-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+            transition: var(--transition-smooth);
+        }
+
+        .glass-card:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+            background: var(--bg-card-hover);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+        }
+
+        .card-header h2 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-header h2 i {
+            color: var(--primary);
+        }
+
+        /* Upload Container styles */
+        .upload-zone {
+            border: 2px dashed rgba(255, 255, 255, 0.15);
+            border-radius: 1rem;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            background: rgba(255, 255, 255, 0.01);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: var(--primary);
+            background: rgba(2, 60, 108, 0.04);
+            box-shadow: 0 0 25px rgba(2, 60, 108, 0.08);
+        }
+
+        .upload-zone i {
+            font-size: 2.25rem;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+            transition: var(--transition-smooth);
+        }
+
+        .upload-zone:hover i {
+            transform: translateY(-4px) scale(1.05);
+        }
+
+        .upload-zone p {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-zone span {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .upload-zone input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        /* Document History List */
+        .doc-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            overflow-y: auto;
+            flex-grow: 1;
+            max-height: 450px;
+        }
+
+        .doc-item {
+            padding: 1rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.01);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .doc-item:hover, .doc-item.active {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateX(4px);
+        }
+
+        .doc-item.active {
+            border-left: 3px solid var(--primary);
+        }
+
+        .doc-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            min-width: 0;
+        }
+
+        .doc-name {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .doc-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .badge {
+            font-size: 0.675rem;
+            font-weight: 700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.375rem;
+            text-transform: uppercase;
+        }
+
+        .badge-auto-post {
+            background-color: var(--success-glow);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .badge-full-review {
+            background-color: var(--warning-glow);
+            color: var(--warning);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .badge-partial-review {
+            background-color: rgba(2, 60, 108, 0.12);
+            color: var(--primary);
+            border: 1px solid rgba(2, 60, 108, 0.2);
+        }
+
+        .badge-failed {
+            background-color: var(--error-glow);
+            color: var(--error);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .btn-delete {
+            width: 1.75rem;
+            height: 1.75rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .btn-delete:hover {
+            color: var(--error);
+            background: var(--error-glow);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1.5rem;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            color: var(--border-color);
+        }
+
+        /* Main details layout */
+        .pipeline-hero {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero-title h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            margin-bottom: 0.25rem;
+        }
+
+        .hero-title p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 0.5rem 1rem;
+            text-align: right;
+        }
+
+        .stat-value {
+            font-size: 1.125rem;
+            font-weight: 700;
+        }
+
+        .stat-label {
+            font-size: 0.675rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        /* Segment Tabs */
+        .segment-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.75rem;
+            overflow-x: auto;
+        }
+
+        .segment-tab {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: var(--transition-smooth);
+        }
+
+        .segment-tab:hover {
+            color: var(--text-primary);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .segment-tab.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #fff;
+            box-shadow: 0 0 15px rgba(2, 60, 108, 0.3);
+        }
+
+        .segment-tab .score-tag {
+            font-size: 0.7rem;
+            background: rgba(0, 0, 0, 0.25);
+            padding: 0.1rem 0.3rem;
+            border-radius: 0.25rem;
+        }
+
+        /* Detail Cards Columns */
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        /* Section Title */
+        .section-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.075em;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title i {
+            color: var(--primary);
+        }
+
+        /* Info rows */
+        .info-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            font-size: 0.875rem;
+        }
+
+        .info-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .info-value {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Validation checklist */
+        .validation-card {
+            grid-column: span 2;
+        }
+
+        .check-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .check-item {
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            font-size: 0.8rem;
+        }
+
+        .check-status-icon {
+            font-size: 1rem;
+            margin-top: 0.1rem;
+        }
+
+        .check-status-icon.pass { color: var(--success); }
+        .check-status-icon.fail-error { color: var(--error); }
+        .check-status-icon.fail-warning { color: var(--warning); }
+
+        .check-details {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+        }
+
+        .check-name {
+            font-weight: 700;
+            color: var(--text-primary);
+            text-transform: capitalize;
+        }
+
+        .check-msg {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            line-height: 1.3;
+        }
+
+        /* Line Items Table */
+        .items-card {
+            grid-column: span 2;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            width: 100%;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            text-align: left;
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-secondary);
+            font-weight: 700;
+            padding: 0.75rem 1rem;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            color: var(--text-primary);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Correct Ledger Form */
+        .learn-box {
+            margin-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 1.5rem;
+            grid-column: span 2;
+        }
+
+        .learn-inputs {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            flex-grow: 1;
+        }
+
+        .input-group label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .input-field {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            padding: 0.6rem 1rem;
+            border-radius: 0.5rem;
+            color: #fff;
+            font-family: inherit;
+            font-size: 0.875rem;
+            outline: none;
+            transition: var(--transition-smooth);
+            width: 100%;
+        }
+
+        .input-field:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(2, 60, 108, 0.15);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .btn-learn {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.65rem 1.5rem;
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.8rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            height: 2.35rem;
+            white-space: nowrap;
+        }
+
+        .btn-learn:hover {
+            opacity: 0.95;
+            box-shadow: 0 0 20px rgba(2, 60, 108, 0.4);
+            transform: translateY(-1px);
+        }
+
+        /* Loading SpinnerOverlay */
+        .loading-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            border-radius: 1rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: var(--transition-smooth);
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .spinner {
+            width: 2.5rem;
+            height: 2.5rem;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .btn-cancel-upload {
+            background: rgba(2, 60, 108, 0.08);
+            border: 1px solid rgba(2, 60, 108, 0.3);
+            color: #ff4d4d;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1.25rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-cancel-upload:hover {
+            background: rgba(2, 60, 108, 0.2);
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(2, 60, 108, 0.25);
+            color: #fff;
+        }
+
+        .loading-text {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        /* Company selector */
+        .company-selector-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            padding: 0.4rem 0.8rem;
+            border-radius: 0.5rem;
+            margin: 0 1.5rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .company-selector-container label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .company-select {
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 0.825rem;
+            font-weight: 700;
+            font-family: inherit;
+            outline: none;
+            cursor: pointer;
+            min-width: 200px;
+        }
+
+        .company-select option {
+            background: #111;
+            color: #fff;
+        }
+
+        /* Dashboard and Stats grid */
+        .dashboard-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            padding: 1rem;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+        }
+
+        .dashboard-header-left h2 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .dashboard-header-left p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .spend-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        .spend-card {
+            background: rgba(255, 255, 255, 0.015);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition-smooth);
+        }
+
+        .spend-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .spend-card.glowing {
+            background: linear-gradient(135deg, rgba(2, 60, 108, 0.15), rgba(255, 255, 255, 0.02));
+            border-color: rgba(2, 60, 108, 0.4);
+        }
+
+        .spend-card-title {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .spend-card-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .spend-card-value.highlight {
+            color: var(--accent);
+            text-shadow: 0 0 10px rgba(181, 136, 99, 0.3);
+        }
+
+        .category-breakdown-card {
+            background: rgba(255, 255, 255, 0.015);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+        }
+
+        .category-spend-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .category-spend-row:last-child {
+            border-bottom: none;
+        }
+
+        .category-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .category-name {
+            text-transform: capitalize;
+            color: var(--text-secondary);
+        }
+
+        .category-amount {
+            color: var(--text-primary);
+        }
+
+        .progress-bar-container {
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 0.25rem;
+            height: 0.45rem;
+            width: 100%;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+        }
+
+        .progress-bar-fill {
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            height: 100%;
+            border-radius: 0.25rem;
+            transition: width 0.6s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">
+            <div class="brand-logo">T</div>
+            <div class="brand-title">
+                <h1>TallyPrime AI Voucher Automation</h1>
+                <p>Advanced Ingestion & Orchestration Dashboard</p>
+            </div>
+        </div>
+
+        <div class="company-selector-container">
+            <i class="fa-solid fa-building" style="color: var(--accent); font-size: 0.9rem;"></i>
+            <label for="company-select">Company Workspace:</label>
+            <select id="company-select" class="company-select">
+                <!-- Dynamically populated -->
+            </select>
+            <button class="btn-learn" id="add-company-btn" style="height: 1.85rem; padding: 0 0.75rem; border-radius: 0.35rem; font-size: 0.725rem; margin-left: 0.5rem; background: linear-gradient(135deg, var(--primary), var(--accent));">
+                <i class="fa-solid fa-plus"></i> Onboard
+            </button>
+            <button class="btn-learn" id="delete-company-btn" style="height: 1.85rem; padding: 0 0.75rem; border-radius: 0.35rem; font-size: 0.725rem; margin-left: 0.35rem; background: linear-gradient(135deg, #d63031, #ff7675); border: 1px solid rgba(214, 48, 49, 0.4); color: #fff; cursor: pointer; display: none;">
+                <i class="fa-solid fa-trash"></i> Delete
+            </button>
+        </div>
+
+        <div class="status-indicators">
+            <div class="indicator online" id="tally-status">
+                <div class="dot"></div>
+                Tally Server: <span id="tally-host-display">Offline</span>
+            </div>
+            <div class="indicator online" id="db-status">
+                <div class="dot"></div>
+                Database: Connected
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Sidebar Column -->
+        <section class="sidebar">
+            <!-- File Upload Card -->
+            <div class="glass-card" style="position: relative;">
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-cloud-arrow-up"></i> Upload Document</h2>
+                </div>
+                <div class="upload-zone" id="dropzone">
+                    <i class="fa-solid fa-file-invoice"></i>
+                    <p>Drag & Drop or Paste your invoices here</p>
+                    <span>PDF, JPEG, PNG, WEBP, TIFF (Multi-select, Paste & Clipboard enabled)</span>
+                    <input type="file" id="file-input" accept=".pdf,.png,.jpg,.jpeg,.webp,.tiff,.tif" multiple>
+                </div>
+                
+                <!-- Inner Upload Spinner -->
+                <div class="loading-overlay" id="upload-overlay" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem;">
+                    <div class="spinner"></div>
+                    <div class="loading-text" style="text-align: center;">Processing Voucher...</div>
+                    <button id="cancel-upload-btn" class="btn-cancel-upload" style="display: none;">
+                        <i class="fa-solid fa-ban"></i> Cancel Ingestion
+                    </button>
+                </div>
+            </div>
+
+            <!-- Documents Ingested List Card -->
+            <div class="glass-card" style="display: flex; flex-direction: column; flex-grow: 1;">
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-history"></i> Document History</h2>
+                    <span id="doc-count" style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">0 Files</span>
+                </div>
+                <div class="doc-list" id="document-history-list">
+                    <!-- Dynamic Document Items go here -->
+                    <div class="empty-state">
+                        <i class="fa-solid fa-folder-open"></i>
+                        <p>No documents uploaded yet</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Panel Details Column -->
+        <section class="main-panel">
+            <div class="glass-card" style="flex-grow: 1; display: flex; flex-direction: column;" id="details-container">
+                <div class="empty-state" style="margin: auto;">
+                    <i class="fa-solid fa-chart-line" style="font-size: 4rem; margin-bottom: 1rem;"></i>
+                    <h3 style="color: var(--text-primary); font-weight: 700; margin-bottom: 0.25rem;">AI Extraction Console</h3>
+                    <p style="font-size: 0.875rem;">Upload a document or select an existing history item to explore ledger mapping, validation reports, and post directly to TallyPrime.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Onboard Company Modal -->
+    <div class="modal-overlay" id="company-modal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 100; display: none; justify-content: center; align-items: center; backdrop-filter: blur(10px);">
+        <div class="glass-card" style="width: 450px; padding: 2rem; position: relative;">
+            <button onclick="closeCompanyModal()" style="position: absolute; top: 1rem; right: 1rem; background: transparent; border: none; color: var(--text-muted); font-size: 1.25rem; cursor: pointer; transition: var(--transition-smooth);"><i class="fa-solid fa-xmark"></i></button>
+            <h3 class="section-title" style="font-size: 1.15rem; margin-bottom: 1.25rem; color: var(--text-primary);"><i class="fa-solid fa-building"></i> Onboard New Client Company</h3>
+            
+            <form id="onboard-company-form" onsubmit="handleOnboardCompany(event)" style="display: flex; flex-direction: column; gap: 1rem; text-align: left;">
+                <div class="input-group">
+                    <label for="new-company-name">Company Name</label>
+                    <input type="text" id="new-company-name" class="input-field" placeholder="e.g. KODRYX CONSULTING PRIVATE LIMITED" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="new-company-gstin">15-char GSTIN</label>
+                    <input type="text" id="new-company-gstin" class="input-field" placeholder="e.g. 36AAACK0000A1Z0" maxlength="15" style="text-transform: uppercase;" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="new-company-host">Tally Prime Host</label>
+                    <input type="text" id="new-company-host" class="input-field" value="localhost" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="new-company-port">Tally Prime Port</label>
+                    <input type="number" id="new-company-port" class="input-field" value="9000" required>
+                </div>
+                
+                <button type="submit" class="btn-learn" style="width: 100%; justify-content: center; margin-top: 0.5rem; height: 2.35rem;">
+                    <i class="fa-solid fa-check"></i> Complete Onboarding
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('file-input');
+        const uploadOverlay = document.getElementById('upload-overlay');
+        const docHistoryList = document.getElementById('document-history-list');
+        const docCountLabel = document.getElementById('doc-count');
+        const detailsContainer = document.getElementById('details-container');
+        const tallyHostDisplay = document.getElementById('tally-host-display');
+        const tallyStatusIndicator = document.getElementById('tally-status');
+        let loadedDocuments = [];
+        let selectedDocUuid = null;
+        let selectedSegmentIdx = 0;
+        let currentDocDetails = null; // cache last fetched document details
+        let selectedCompanyId = 1;
+
+        // Onboard Company Form & Modal Handlers
+        const companyModal = document.getElementById('company-modal');
+        const onboardForm = document.getElementById('onboard-company-form');
+        document.getElementById('add-company-btn').onclick = () => {
+            companyModal.style.display = 'flex';
+        };
+
+        function closeCompanyModal() {
+            companyModal.style.display = 'none';
+            onboardForm.reset();
+        }
+
+        const deleteCompanyBtn = document.getElementById('delete-company-btn');
+        deleteCompanyBtn.onclick = async () => {
+            if (selectedCompanyId == 1) {
+                alert("The default company (KODRYX AI PRIVATE LIMITED) cannot be deleted.");
+                return;
+            }
+            const confirmDelete = confirm("Are you sure you want to delete this company and all its associated documents? This action is irreversible!");
+            if (!confirmDelete) return;
+
+            try {
+                const response = await fetch(`/api/companies/${selectedCompanyId}`, {
+                    method: 'DELETE'
+                });
+                if (response.ok) {
+                    alert("Company and all associated documents deleted successfully!");
+                    selectedCompanyId = 1;
+                    await loadCompanies();
+                } else {
+                    const err = await response.json();
+                    alert(`Failed to delete company: ${err.detail}`);
+                }
+            } catch (err) {
+                console.error("Deletion error:", err);
+                alert("Failed to connect to the server.");
+            }
+        };
+
+        async function handleOnboardCompany(event) {
+            event.preventDefault();
+            const name = document.getElementById('new-company-name').value;
+            const gstin = document.getElementById('new-company-gstin').value;
+            const host = document.getElementById('new-company-host').value;
+            const port = parseInt(document.getElementById('new-company-port').value);
+
+            try {
+                const response = await fetch('/api/companies', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        gstin: gstin,
+                        tally_host: host,
+                        tally_port: port
+                    })
+                });
+
+                if (response.ok) {
+                    const newComp = await response.json();
+                    alert(`Successfully onboarded ${name}!`);
+                    closeCompanyModal();
+                    
+                    // Set selectedCompanyId before reloading so that loadCompanies preserves it
+                    selectedCompanyId = newComp.id;
+
+                    // Reload companies dropdown and select the newly created company
+                    await loadCompanies();
+                    
+                    // Set dropdown value to the new company ID
+                    const selectEl = document.getElementById('company-select');
+                    selectEl.value = newComp.id;
+                    tallyHostDisplay.innerText = `${newComp.tally_host}:${newComp.tally_port}`;
+                    
+                    // Trigger workspace reload
+                    selectedDocUuid = null;
+                    await loadDocumentsHistory(true);
+                    await loadCompanyAnalytics();
+                } else {
+                    const err = await response.json();
+                    alert(`Failed to onboard company: ${err.detail}`);
+                }
+            } catch (err) {
+                console.error("Onboarding error:", err);
+                alert("Failed to connect to the server.");
+            }
+        }
+
+        // Init Lifecycle
+        window.addEventListener('load', () => {
+            fetchHealthCheck();
+            loadCompanies();
+        });
+
+        // Load Companies Dropdown on Startup
+        async function loadCompanies() {
+            try {
+                const response = await fetch('/api/companies');
+                if (response.ok) {
+                    const companies = await response.json();
+                    const selectEl = document.getElementById('company-select');
+                    selectEl.innerHTML = '';
+                    companies.forEach(company => {
+                        const opt = document.createElement('option');
+                        opt.value = company.id;
+                        opt.innerText = company.name;
+                        selectEl.appendChild(opt);
+                    });
+
+                    // Set default selection
+                    if (companies.length > 0) {
+                        if (!companies.find(c => c.id == selectedCompanyId)) {
+                            selectedCompanyId = companies[0].id;
+                        }
+                        selectEl.value = selectedCompanyId;
+                        
+                        // Set dynamic tally server host display
+                        const activeComp = companies.find(c => c.id == selectedCompanyId) || companies[0];
+                        tallyHostDisplay.innerText = `${activeComp.tally_host}:${activeComp.tally_port}`;
+                    }
+
+                    // Update delete button visibility (hide for ID 1, show for others)
+                    deleteCompanyBtn.style.display = selectedCompanyId == 1 ? 'none' : 'inline-block';
+
+                    // On selector change, reload history & dashboard stats
+                    selectEl.onchange = async (e) => {
+                        selectedCompanyId = e.target.value;
+                        selectedDocUuid = null;
+                        
+                        // Update delete button visibility
+                        deleteCompanyBtn.style.display = selectedCompanyId == 1 ? 'none' : 'inline-block';
+
+                        // Find selected company tally host/port
+                        const selectedComp = companies.find(c => c.id == selectedCompanyId);
+                        if (selectedComp) {
+                            tallyHostDisplay.innerText = `${selectedComp.tally_host}:${selectedComp.tally_port}`;
+                        }
+                        
+                        await loadDocumentsHistory(true);
+                        await loadCompanyAnalytics();
+                    };
+
+                    await loadDocumentsHistory(true);
+                    await loadCompanyAnalytics();
+                }
+            } catch (err) {
+                console.error("Failed to load companies:", err);
+            }
+        }
+
+        // Fetch and Render Premium Company Analytics Dashboard
+        async function loadCompanyAnalytics() {
+            if (selectedDocUuid !== null) return;
+
+            detailsContainer.innerHTML = `
+                <div class="spinner" style="margin: auto;"></div>
+            `;
+
+            try {
+                const [companyResponse, statsResponse] = await Promise.all([
+                    fetch(`/api/companies/${selectedCompanyId}`),
+                    fetch(`/api/companies/${selectedCompanyId}/stats`)
+                ]);
+
+                if (companyResponse.ok && statsResponse.ok) {
+                    const company = await companyResponse.json();
+                    const stats = await statsResponse.json();
+
+                    // Render Analytics Dashboard HTML
+                    let categorySpendRowsHtml = '';
+                    const categories = stats.spend_by_category || {};
+                    const totalSpend = stats.total_spend || 0.0;
+                    
+                    if (Object.keys(categories).length === 0) {
+                        categorySpendRowsHtml = `
+                            <div class="empty-state" style="padding: 1.5rem;">
+                                <p>No category spend recorded yet for this company workspace.</p>
+                            </div>
+                        `;
+                    } else {
+                        Object.entries(categories)
+                            .sort((a, b) => b[1] - a[1]) // Sort categories by highest spend
+                            .forEach(([cat, amount]) => {
+                                const percentage = totalSpend > 0 ? (amount / totalSpend * 100).toFixed(0) : 0;
+                                categorySpendRowsHtml += `
+                                    <div class="category-spend-row">
+                                        <div class="category-info">
+                                            <span class="category-name"><i class="fa-solid fa-tag" style="font-size: 0.75rem; color: var(--primary); margin-right: 0.5rem;"></i>${cat.replace('_', ' ')}</span>
+                                            <span class="category-amount">₹${amount.toFixed(2)} (${percentage}%)</span>
+                                        </div>
+                                        <div class="progress-bar-container">
+                                            <div class="progress-bar-fill" style="width: ${percentage}%;"></div>
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                    }
+
+                    detailsContainer.innerHTML = `
+                        <div class="dashboard-container">
+                            <div class="dashboard-header">
+                                <div class="dashboard-header-left">
+                                    <h2><i class="fa-solid fa-chart-pie" style="color: var(--accent); margin-right: 0.5rem;"></i> Workspace Analytics: ${company.name}</h2>
+                                    <p>GSTIN: ${company.gstin} • State: ${company.state_code} • Real-time Tally Integration Audit Trail</p>
+                                </div>
+                                <button class="btn-learn" onclick="loadCompanyAnalytics()" style="height: 2.15rem; padding: 0 1rem; border-radius: 0.5rem;">
+                                    <i class="fa-solid fa-arrows-rotate"></i> Refresh Dashboard
+                                </button>
+                            </div>
+
+                            <div class="spend-grid">
+                                <div class="spend-card">
+                                    <span class="spend-card-title">Total Invoices</span>
+                                    <span class="spend-card-value">${stats.total_invoices} File${stats.total_invoices === 1 ? '' : 's'}</span>
+                                </div>
+                                <div class="spend-card">
+                                    <span class="spend-card-title">Auto-Posted</span>
+                                    <span class="spend-card-value" style="color: var(--success);">${stats.auto_post_count} Posted</span>
+                                </div>
+                                <div class="spend-card">
+                                    <span class="spend-card-title">Pending Correction</span>
+                                    <span class="spend-card-value" style="color: var(--warning);">${stats.pending_count} Review</span>
+                                </div>
+                                <div class="spend-card glowing">
+                                    <span class="spend-card-title" style="color: var(--accent); font-weight: 700;">Total Consolidated Spend</span>
+                                    <span class="spend-card-value highlight">₹${totalSpend.toFixed(2)}</span>
+                                </div>
+                            </div>
+
+                            <div class="glass-card category-breakdown-card">
+                                <h3 class="section-title" style="margin-bottom: 1rem;"><i class="fa-solid fa-wallet"></i> Operating Expenses Breakdown (by Category)</h3>
+                                <div class="category-breakdown-list">
+                                    ${categorySpendRowsHtml}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                console.error("Failed to load company stats:", err);
+                detailsContainer.innerHTML = `
+                    <div class="empty-state" style="margin: auto;">
+                        <i class="fa-solid fa-triangle-exclamation" style="color: var(--error);"></i>
+                        <h3>Failed to load analytics</h3>
+                        <p>Error retrieving metrics dashboard.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Ping FastAPI and Tally Status
+        async function fetchHealthCheck() {
+            try {
+                tallyStatusIndicator.classList.add('online');
+            } catch (err) {
+                console.error("Health check failed:", err);
+            }
+        }
+
+        // Load Document Ingestion History
+        async function loadDocumentsHistory(selectFirst = false) {
+            try {
+                const response = await fetch(`/api/documents?company_id=${selectedCompanyId}`);
+                if (response.ok) {
+                    loadedDocuments = await response.json();
+                    docCountLabel.innerText = `${loadedDocuments.length} File${loadedDocuments.length === 1 ? '' : 's'}`;
+                    
+                    if (loadedDocuments.length === 0) {
+                        docHistoryList.innerHTML = `
+                            <div class="empty-state">
+                                <i class="fa-solid fa-folder-open"></i>
+                                <p>No documents uploaded yet</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    docHistoryList.innerHTML = '';
+                    loadedDocuments.forEach(doc => {
+                        const item = document.createElement('div');
+                        item.className = `doc-item ${doc.document_uuid === selectedDocUuid ? 'active' : ''}`;
+                        item.onclick = () => selectDocument(doc.document_uuid);
+
+                        const formattedDate = new Date(doc.created_at).toLocaleDateString(undefined, {
+                            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                        });
+
+                        item.innerHTML = `
+                            <div class="doc-info">
+                                <div class="doc-name" title="${doc.original_filename}">${doc.original_filename}</div>
+                                <div class="doc-meta">
+                                    <span class="badge badge-${doc.overall_status.replace('_', '-')}">${doc.overall_status.replace('_', ' ')}</span>
+                                    <span>${formattedDate}</span>
+                                    ${doc.confidence_score > 0 ? `<span>• Score: ${(doc.confidence_score * 100).toFixed(0)}%</span>` : ''}
+                                </div>
+                            </div>
+                            <button class="btn-delete" onclick="event.stopPropagation(); deleteDocument('${doc.document_uuid}')" title="Delete record">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        `;
+                        docHistoryList.appendChild(item);
+                    });
+
+                    if (selectFirst && loadedDocuments.length > 0 && !selectedDocUuid) {
+                        selectDocument(loadedDocuments[0].document_uuid);
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to load documents history:", err);
+            }
+        }
+
+        // Select and fetch document detailed results
+        async function selectDocument(uuid) {
+            // Only reset segment index when switching to a different document
+            if (uuid !== selectedDocUuid) {
+                selectedSegmentIdx = 0;
+                currentDocDetails = null;
+            }
+            selectedDocUuid = uuid;
+
+            // Highlight active in list
+            document.querySelectorAll('.doc-item').forEach((item, idx) => {
+                const doc = loadedDocuments[idx];
+                if (doc && doc.document_uuid === uuid) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+
+            detailsContainer.innerHTML = `
+                <div class="spinner" style="margin: auto;"></div>
+            `;
+
+            try {
+                const response = await fetch(`/api/documents/${uuid}`);
+                if (response.ok) {
+                    currentDocDetails = await response.json();
+                    renderDocumentDetails(currentDocDetails);
+                } else {
+                    detailsContainer.innerHTML = `
+                        <div class="empty-state" style="margin: auto;">
+                            <i class="fa-solid fa-triangle-exclamation" style="color: var(--error);"></i>
+                            <h3>Failed to load document</h3>
+                            <p>Unable to retrieve processing states for document ${uuid}.</p>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                console.error("Error fetching document details:", err);
+            }
+        }
+
+        // Render detailed extracted vouchers
+        function renderDocumentDetails(details) {
+            const dateStr = new Date(details.processing_time_ms ? Date.now() - details.processing_time_ms : Date.now()).toLocaleString();
+            
+            let segmentsHtml = '';
+            if (!details.segments || details.segments.length === 0) {
+                segmentsHtml = `
+                    <div class="empty-state" style="grid-column: span 2;">
+                        <i class="fa-solid fa-folder-minus"></i>
+                        <p>No document segments identified. Click Delete to clean up this file.</p>
+                    </div>
+                `;
+            } else {
+                const activeSegment = details.segments[selectedSegmentIdx];
+                if (!activeSegment) return;
+                
+                const invoice = activeSegment.extracted_invoice || {};
+                const ledger = activeSegment.ledger_mapping || {};
+                const validation = activeSegment.validation_report || { checks: [] };
+
+                // Segment selector tabs
+                let tabHtml = '';
+                details.segments.forEach((seg, idx) => {
+                    tabHtml += `
+                        <div class="segment-tab ${idx === selectedSegmentIdx ? 'active' : ''}" onclick="changeSegment(${idx})">
+                            <i class="fa-solid fa-tags"></i>
+                            Segment ${idx + 1}: ${seg.category.replace('_', ' ')}
+                            <span class="score-tag">${(seg.confidence_score * 100).toFixed(0)}%</span>
+                        </div>
+                    `;
+                });
+
+                // Render Validation Checklist Items
+                let checkItemsHtml = '';
+                if (validation.checks.length === 0) {
+                    checkItemsHtml = `
+                        <div class="empty-state" style="grid-column: span 2; padding: 1rem;">
+                            <p>Validation results are empty for this segment.</p>
+                        </div>
+                    `;
+                } else {
+                    validation.checks.forEach(check => {
+                        let iconClass = 'fa-solid fa-circle-check pass';
+                        let severityClass = 'pass';
+                        if (!check.passed) {
+                            if (check.severity === 'error') {
+                                iconClass = 'fa-solid fa-circle-xmark fail-error';
+                                severityClass = 'fail-error';
+                            } else {
+                                iconClass = 'fa-solid fa-circle-exclamation fail-warning';
+                                severityClass = 'fail-warning';
+                            }
+                        }
+                        checkItemsHtml += `
+                            <div class="check-item">
+                                <i class="${iconClass} check-status-icon"></i>
+                                <div class="check-details">
+                                    <span class="check-name">${check.check_name.replace(/_/g, ' ')}</span>
+                                    <span class="check-msg">${check.message}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                // Render Line Items Table
+                let lineItemsHtml = '';
+                const items = invoice.line_items || [];
+                if (items.length === 0) {
+                    lineItemsHtml = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No line items extracted</td></tr>`;
+                } else {
+                    items.forEach(item => {
+                        lineItemsHtml += `
+                            <tr>
+                                <td style="font-weight: 500;">${item.description}</td>
+                                <td>${item.hsn_code || '-'}</td>
+                                <td>${item.taxable_value.toFixed(2)}</td>
+                                <td>${item.cgst_amount > 0 ? `${item.cgst_amount.toFixed(2)} (${item.cgst_rate}%)` : '-'}</td>
+                                <td>${item.sgst_amount > 0 ? `${item.sgst_amount.toFixed(2)} (${item.sgst_rate}%)` : '-'}</td>
+                                <td>${item.igst_amount > 0 ? `${item.igst_amount.toFixed(2)} (${item.igst_rate}%)` : '-'}</td>
+                            </tr>
+                        `;
+                    });
+                }
+
+                segmentsHtml = `
+                    <!-- Segments selector tabs container -->
+                    <div class="segment-tabs">
+                        ${tabHtml}
+                    </div>
+
+                    <div class="details-grid">
+                        <!-- Left Panel: Extracted Invoice details -->
+                        <div class="glass-card">
+                            <h3 class="section-title"><i class="fa-solid fa-file-invoice-dollar"></i> Extracted Invoice Fields</h3>
+                            <div class="info-list">
+                                <div class="info-row">
+                                    <span class="info-label">Vendor Name</span>
+                                    <span class="info-value" id="vendor-name-label">${invoice.vendor_name || 'N/A'}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Vendor GSTIN</span>
+                                    <span class="info-value">${invoice.vendor_gstin || 'N/A'}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Invoice Number</span>
+                                    <span class="info-value">${invoice.invoice_number || 'N/A'}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Invoice Date</span>
+                                    <span class="info-value">${invoice.invoice_date || 'N/A'}</span>
+                                </div>
+                                <div class="info-row" style="border-top: 1px solid var(--border-color); padding-top: 0.75rem; margin-top: 0.5rem;">
+                                    <span class="info-label">Subtotal (Taxable)</span>
+                                    <span class="info-value">₹${invoice.subtotal ? invoice.subtotal.toFixed(2) : '0.00'}</span>
+                                </div>
+                                ${invoice.total_cgst > 0 ? `
+                                <div class="info-row">
+                                    <span class="info-label">Total CGST</span>
+                                    <span class="info-value">₹${invoice.total_cgst.toFixed(2)}</span>
+                                </div>
+                                ` : ''}
+                                ${invoice.total_sgst > 0 ? `
+                                <div class="info-row">
+                                    <span class="info-label">Total SGST</span>
+                                    <span class="info-value">₹${invoice.total_sgst.toFixed(2)}</span>
+                                </div>
+                                ` : ''}
+                                ${invoice.total_igst > 0 ? `
+                                <div class="info-row">
+                                    <span class="info-label">Total IGST</span>
+                                    <span class="info-value">₹${invoice.total_igst.toFixed(2)}</span>
+                                </div>
+                                ` : ''}
+                                <div class="info-row">
+                                    <span class="info-label">Round Off</span>
+                                    <span class="info-value">₹${invoice.round_off ? invoice.round_off.toFixed(2) : '0.00'}</span>
+                                </div>
+                                <div class="info-row" style="background: rgba(255, 255, 255, 0.02); padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border-color); font-size: 1rem;">
+                                    <span class="info-label" style="color: var(--text-primary); font-weight: 700;">Grand Total</span>
+                                    <span class="info-value" style="color: var(--accent); font-weight: 800; font-size: 1.15rem;">₹${invoice.grand_total ? invoice.grand_total.toFixed(2) : '0.00'}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Panel: Ledger mappings -->
+                        <div class="glass-card">
+                            <h3 class="section-title"><i class="fa-solid fa-project-diagram"></i> TallyPrime Ledger Mappings</h3>
+                            <div class="info-list">
+                                <div class="info-row">
+                                    <span class="info-label">Debit Ledger (Expense)</span>
+                                    <span class="info-value" style="color: var(--primary);">${ledger.debit_ledger || 'N/A'}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Credit Ledger (Accounts Payable)</span>
+                                    <span class="info-value">${ledger.credit_ledger || 'N/A'}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Tax Configuration</span>
+                                    <span class="info-value" style="text-transform: uppercase;">${ledger.tax_type || 'N/A'}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">CGST Ledger</span>
+                                    <span class="info-value">${ledger.cgst_ledger || '-'}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">SGST Ledger</span>
+                                    <span class="info-value">${ledger.sgst_ledger || '-'}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">IGST Ledger</span>
+                                    <span class="info-value">${ledger.igst_ledger || '-'}</span>
+                                </div>
+                                <div class="info-row" style="border-top: 1px solid var(--border-color); padding-top: 0.75rem; margin-top: 0.5rem;">
+                                    <span class="info-label">Resolution Mechanism</span>
+                                    <span class="info-value" style="text-transform: capitalize;">${ledger.match_type ? ledger.match_type.replace('_', ' ') : 'N/A'}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Resolution Penalty</span>
+                                    <span class="info-value" style="color: var(--error);">${ledger.confidence_penalty ? `-${ledger.confidence_penalty}` : '0.00'}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Validation Checklist Card -->
+                        <div class="glass-card validation-card">
+                            <h3 class="section-title"><i class="fa-solid fa-clipboard-check"></i> Compliance & Validation Report</h3>
+                            <div class="check-grid">
+                                ${checkItemsHtml}
+                            </div>
+                        </div>
+
+                        <!-- Line items table card -->
+                        <div class="glass-card items-card">
+                            <h3 class="section-title"><i class="fa-solid fa-list-ol"></i> Itemized Line Details</h3>
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Description</th>
+                                            <th>HSN/SAC</th>
+                                            <th>Taxable Value</th>
+                                            <th>CGST</th>
+                                            <th>SGST</th>
+                                            <th>IGST</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${lineItemsHtml}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Rule learning widget -->
+                        <div class="glass-card learn-box">
+                            <h3 class="section-title"><i class="fa-solid fa-lightbulb"></i> Human Correction (Train Ledger Mapper)</h3>
+                            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem; line-height: 1.4;">
+                                If the debit ledger resolved above is incorrect, select the correct TallyPrime ledger below. 
+                                Learning rules will automatically gain higher priority (priority=200) to ensure perfect matching on all future invoices from this vendor.
+                            </p>
+                            <div class="learn-inputs">
+                                <div class="input-group">
+                                    <label>Correct Tally Ledger Name</label>
+                                    <select class="input-field" id="corrected-ledger-select">
+                                        <option value="Electricity Expenses">Electricity Expenses</option>
+                                        <option value="Internet Expenses">Internet Expenses</option>
+                                        <option value="Rent Expenses">Rent Expenses</option>
+                                        <option value="Travel Expenses">Travel Expenses</option>
+                                        <option value="Office Pantry Expenses">Office Pantry Expenses</option>
+                                        <option value="Office Maintenance Expenses">Office Maintenance Expenses</option>
+                                        <option value="Office Infrastructure Expenses">Office Infrastructure Expenses</option>
+                                        <option value="Professional Services Fees">Professional Services Fees</option>
+                                    </select>
+                                </div>
+                                <button class="btn-learn" onclick="submitCorrection('${invoice.vendor_name}', '${activeSegment.category}')">
+                                    <i class="fa-solid fa-graduation-cap"></i> Train Model
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            detailsContainer.innerHTML = `
+                <div class="pipeline-hero">
+                    <div class="hero-title">
+                        <h2>${details.file_path.split('/').pop()}</h2>
+                        <p>ID: ${details.document_uuid} • Ingested: ${dateStr}</p>
+                    </div>
+                    <div class="hero-stats">
+                        <div class="stat-box">
+                            <div class="stat-value" style="color: ${details.overall_status === 'auto_post' ? 'var(--success)' : details.overall_status === 'failed' ? 'var(--error)' : 'var(--primary)'}; text-transform: capitalize;">
+                                ${details.overall_status.replace('_', ' ')}
+                            </div>
+                            <div class="stat-label">Pipeline Status</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value">${details.auto_post_count}</div>
+                            <div class="stat-label">Auto Posted</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value">${details.processing_time_ms} ms</div>
+                            <div class="stat-label">Response Time</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="flex-grow: 1; overflow-y: auto;">
+                    ${segmentsHtml}
+                </div>
+            `;
+        }
+
+        // Switch segments — re-render using cached doc data, no server round-trip
+        function changeSegment(idx) {
+            selectedSegmentIdx = idx;
+            if (currentDocDetails) {
+                renderDocumentDetails(currentDocDetails);
+            }
+        }
+
+        // Drag and Drop Upload Handlers
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('dragover');
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleMultipleFiles(files);
+            }
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                handleMultipleFiles(fileInput.files);
+            }
+        });
+
+        // Clipboard Paste Upload Handler
+        document.addEventListener('paste', (e) => {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            const files = [];
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].kind === 'file') {
+                    const file = items[i].getAsFile();
+                    if (file) {
+                        // Create a descriptive name if it's a pasted screenshot image
+                        if (file.name === "image.png" || !file.name) {
+                            const extension = file.type.split('/')[1] || 'png';
+                            const dateStr = new Date().toISOString().slice(0, 10);
+                            const timestamp = Math.floor(Date.now() / 1000);
+                            const namedFile = new File([file], `Pasted_Invoice_${dateStr}_${timestamp}.${extension}`, { type: file.type });
+                            files.push(namedFile);
+                        } else {
+                            files.push(file);
+                        }
+                    }
+                }
+            }
+            if (files.length > 0) {
+                handleMultipleFiles(files);
+            }
+        });
+
+        let isUploadCancelled = false;
+
+        // Perform Bulk/Multiple Uploads POST Request
+        async function handleMultipleFiles(files) {
+            isUploadCancelled = false;
+            
+            const cancelBtn = document.getElementById('cancel-upload-btn');
+            const statusText = document.querySelector('#upload-overlay .loading-text');
+            const originalText = statusText ? statusText.innerText : "Processing Voucher...";
+
+            if (cancelBtn) {
+                cancelBtn.style.display = 'flex';
+                cancelBtn.onclick = () => {
+                    isUploadCancelled = true;
+                    if (statusText) {
+                        statusText.innerText = "Cancelling ingestion...";
+                    }
+                };
+            }
+
+            uploadOverlay.classList.add('active');
+            let successCount = 0;
+            let lastResult = null;
+
+            try {
+                for (let i = 0; i < files.length; i++) {
+                    if (isUploadCancelled) {
+                        console.log("Ingestion cancelled by operator.");
+                        break;
+                    }
+
+                    const file = files[i];
+                    if (statusText) {
+                        statusText.innerText = `Ingesting voucher ${i + 1} of ${files.length}:\n${file.name}`;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    try {
+                        const response = await fetch(`/api/documents/upload?company_id=${selectedCompanyId}`, {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        if (response.ok) {
+                            lastResult = await response.json();
+                            successCount++;
+                        } else {
+                            const err = await response.json();
+                            alert(`Failed to ingest ${file.name}: ${err.detail || 'Internal Server Error'}`);
+                        }
+                    } catch (err) {
+                        console.error("Upload error for file:", file.name, err);
+                        alert(`Upload failed for ${file.name}. Make sure local server is active.`);
+                    }
+                }
+            } finally {
+                if (cancelBtn) {
+                    cancelBtn.style.display = 'none';
+                }
+                if (statusText) {
+                    statusText.innerText = originalText;
+                }
+                uploadOverlay.classList.remove('active');
+                fileInput.value = '';
+
+                if (successCount > 0 && lastResult) {
+                    selectedDocUuid = lastResult.document_uuid;
+                    await loadDocumentsHistory();
+                    await selectDocument(lastResult.document_uuid);
+                }
+            }
+        }
+
+        // Delete Document Record
+        async function deleteDocument(uuid) {
+            if (!confirm("Are you sure you want to delete this document record? The file will be cleaned up from disk.")) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/documents/${uuid}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    if (selectedDocUuid === uuid) {
+                        selectedDocUuid = null;
+                        await loadCompanyAnalytics();
+                    }
+                    await loadDocumentsHistory(true);
+                    if (selectedDocUuid === null) {
+                        await loadCompanyAnalytics();
+                    }
+                } else {
+                    alert("Failed to delete record.");
+                }
+            } catch (err) {
+                console.error("Delete record error:", err);
+            }
+        }
+
+        // Submit Human Correction (Rule learning)
+        async function submitCorrection(vendorName, category) {
+            const selectEl = document.getElementById('corrected-ledger-select');
+            const correctedLedger = selectEl.value;
+
+            if (!vendorName || vendorName === 'N/A' || !correctedLedger) {
+                alert("Cannot train mapper with missing vendor details.");
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/ledger-rules/learn', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        vendor_name: vendorName,
+                        category: category,
+                        tally_ledger_name: correctedLedger,
+                        corrected_by: "human_operator"
+                    })
+                });
+
+                if (response.ok) {
+                    const learnRes = await response.json();
+                    alert(`Successfully trained Ledger Matcher! Created learned rule (id=${learnRes.rule_id}).\nNext uploads for '${vendorName}' will map to '${correctedLedger}' automatically.`);
+                    
+                    // Reload document details to reflect high accuracy
+                    selectDocument(selectedDocUuid);
+                } else {
+                    const err = await response.json();
+                    alert(`Failed to train rule: ${err.detail}`);
+                }
+            } catch (err) {
+                console.error("Failed training rule:", err);
+            }
+        }
+    </script>
+</body>
+</html>
