@@ -19,7 +19,7 @@ import logging
 import re
 from typing import Any, Optional
 
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from app.config import settings
@@ -113,16 +113,16 @@ def _build_user_prompt(raw_text: str, retry: bool = False) -> str:
 # ---------------------------------------------------------------------------
 
 
-_llm_instance = None
+_llm_instance: ChatGoogleGenerativeAI | None = None
 
 
-def _get_llm():
+def _get_llm() -> ChatGoogleGenerativeAI:
     global _llm_instance
     if _llm_instance is None:
-        _llm_instance = ChatOpenAI(
-            model="gpt-5-mini",
-            api_key=settings.OPENAI_API_KEY,
-            timeout=60,
+        _llm_instance = ChatGoogleGenerativeAI(
+            model="gemini-2.5-flash",
+            google_api_key=settings.GOOGLE_API_KEY,
+            temperature=0,
             max_retries=0,
         )
     return _llm_instance
