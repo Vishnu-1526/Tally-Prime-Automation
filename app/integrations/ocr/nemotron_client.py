@@ -60,11 +60,11 @@ def calculate_page_quality(text: str) -> float:
     """
     if not text:
         return 0.0
-    
+
     cleaned = text.strip()
     if not cleaned:
         return 0.0
-        
+
     length = len(cleaned)
     if length > 200 and any(c.isdigit() for c in cleaned):
         return 1.0
@@ -88,9 +88,14 @@ async def process_single_page_image(image: Image.Image, page_number: int) -> Pag
         base64_image = await asyncio.to_thread(pil_to_base64, image)
 
         prompt = (
-            "Extract all text from this financial document image exactly as it appears. "
-            "Preserve all numbers, amounts, GSTIN numbers, dates, and table structures. "
-            "Output raw text only, no commentary."
+        """ You are a highly precise, zero-loss OCR engine specializing in financial audit-grade document extraction. Your goal is to transcribe this financial document image with 100% exact fidelity.
+            Follow these strict transcription rules:
+            1. NUMERICAL ACCURACY: Transcribe all numbers, decimals, rates, quantity values, tax percentages, subtotals, and grand totals exactly. Never round, approximate, or drop trailing zeros (e.g., "1,32,960.00" must remain "1,32,960.00").
+            2. ALPHANUMERIC STRINGS: Pay extreme attention to GSTINs, PANs, CINs, bank account numbers, IFSC codes, invoice numbers, and HSN/SAC codes. Transcribe every character letter-for-letter (do not confuse "0" and "O" or "1" and "I").
+            3. STRUCTURAL LAYOUT: Retain the visual layout. Format tables, line-item grids, tax breakdowns, and payment details into clean, structured Markdown tables or aligned text blocks so that the relationship between row headers and values is perfectly preserved.
+            4. EXACT TEXT TRANSCRIPTION: Extract all text exactly as it appears (company names, billing/shipping addresses, labels, footer notes). Do not auto-correct spelling, abbreviations, or punctuation.
+            5. ZERO EXTRANEOUS OUTPUT: Output ONLY the transcribed document text. Do not include any markdown fences (such as ```text), preambles, conversational introductions, or postscripts.
+        """
         )
 
         message = HumanMessage(
@@ -109,7 +114,7 @@ async def process_single_page_image(image: Image.Image, page_number: int) -> Pag
             temperature=0,
             max_retries=0,
         )
-
+         
         import random
         # Custom exponential backoff retry loop for Rate Limit (429 / RESOURCE_EXHAUSTED)
         max_attempts = 8
@@ -163,9 +168,14 @@ async def process_single_page_image(image: Image.Image, page_number: int) -> Pag
                 base64_image = await asyncio.to_thread(pil_to_base64, image)
 
             prompt = (
-                "Extract all text from this financial document image exactly as it appears. "
-                "Preserve all numbers, amounts, GSTIN numbers, dates, and table structures. "
-                "Output raw text only, no commentary."
+               """ You are a highly precise, zero-loss OCR engine specializing in financial audit-grade document extraction. Your goal is to transcribe this financial document image with 100% exact fidelity.
+                    Follow these strict transcription rules:
+                    1. NUMERICAL ACCURACY: Transcribe all numbers, decimals, rates, quantity values, tax percentages, subtotals, and grand totals exactly. Never round, approximate, or drop trailing zeros (e.g., "1,32,960.00" must remain "1,32,960.00").
+                    2. ALPHANUMERIC STRINGS: Pay extreme attention to GSTINs, PANs, CINs, bank account numbers, IFSC codes, invoice numbers, and HSN/SAC codes. Transcribe every character letter-for-letter (do not confuse "0" and "O" or "1" and "I").
+                    3. STRUCTURAL LAYOUT: Retain the visual layout. Format tables, line-item grids, tax breakdowns, and payment details into clean, structured Markdown tables or aligned text blocks so that the relationship between row headers and values is perfectly preserved.
+                    4. EXACT TEXT TRANSCRIPTION: Extract all text exactly as it appears (company names, billing/shipping addresses, labels, footer notes). Do not auto-correct spelling, abbreviations, or punctuation.
+                    5. ZERO EXTRANEOUS OUTPUT: Output ONLY the transcribed document text. Do not include any markdown fences (such as ```text), preambles, conversational introductions, or postscripts."""
+
             )
 
             payload = {
@@ -313,4 +323,4 @@ async def extract_text(file_path: str) -> OCRResult:
         overall_quality=overall_quality,
         ocr_engine=overall_engine,
         processing_time_ms=processing_time_ms,
-    )
+    ) 

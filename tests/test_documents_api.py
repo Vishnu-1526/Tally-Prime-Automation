@@ -37,12 +37,19 @@ async def test_upload_valid_document_success():
         processing_time_ms=50
     )
 
+    mock_session = AsyncMock()
+    mock_execute_res = MagicMock()
+    mock_execute_res.scalar_one_or_none.return_value = 1  # Mock company exists
+    mock_session.execute = AsyncMock(return_value=mock_execute_res)
+
     with patch("app.api.documents.run_pipeline", new_callable=AsyncMock) as mock_run_pipeline, \
          patch("app.api.documents._find_duplicate", new_callable=AsyncMock) as mock_find_dup, \
          patch("app.api.documents.compute_sha256", return_value="mock-sha256"), \
+         patch("app.api.documents.get_db_session") as mock_db_session, \
          patch("os.makedirs"), \
          patch("builtins.open", MagicMock()):
 
+        mock_db_session.return_value.__aenter__.return_value = mock_session
         mock_find_dup.return_value = None
         mock_run_pipeline.return_value = mock_pipeline_res
 
@@ -73,14 +80,21 @@ async def test_upload_duplicate_document_success():
     mock_duplicate_db_doc.document_uuid = "existing-uuid"
     mock_duplicate_db_doc.file_path = "storage/existing-uuid/invoice.pdf"
 
+    mock_session = AsyncMock()
+    mock_execute_res = MagicMock()
+    mock_execute_res.scalar_one_or_none.return_value = 1  # Mock company exists
+    mock_session.execute = AsyncMock(return_value=mock_execute_res)
+
     with patch("app.api.documents.run_pipeline", new_callable=AsyncMock) as mock_run_pipeline, \
          patch("app.api.documents._find_duplicate", new_callable=AsyncMock) as mock_find_dup, \
          patch("app.api.documents.compute_sha256", return_value="existing-sha256"), \
+         patch("app.api.documents.get_db_session") as mock_db_session, \
          patch("os.makedirs"), \
          patch("os.remove"), \
          patch("os.rmdir"), \
          patch("builtins.open", MagicMock()):
 
+        mock_db_session.return_value.__aenter__.return_value = mock_session
         mock_find_dup.return_value = mock_duplicate_db_doc
         mock_run_pipeline.return_value = mock_pipeline_res
 

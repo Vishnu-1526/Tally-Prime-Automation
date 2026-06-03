@@ -100,7 +100,9 @@ async def test_run_pipeline_success():
         # Mock database session
         mock_session = AsyncMock()
         mock_db_session.return_value.__aenter__.return_value = mock_session
-        mock_session.execute.return_value.scalar_one_or_none.return_value = None  # Mock no DB record found gracefully
+        mock_execute_res = MagicMock()
+        mock_execute_res.scalar_one_or_none.return_value = None
+        mock_session.execute = AsyncMock(return_value=mock_execute_res)
 
         # Run pipeline
         res = await run_pipeline("mock-doc-uuid", "/tmp/mock.pdf")
@@ -115,4 +117,4 @@ async def test_run_pipeline_success():
         assert res.segments[0].status == "auto_post"
 
         # Verify Tally client was invoked for auto-post voucher
-        mock_post_voucher_fn.assert_called_once_with(mock_extracted_invoice, mock_ledger)
+        mock_post_voucher_fn.assert_called_once_with(mock_extracted_invoice, mock_ledger, host=None, port=None)

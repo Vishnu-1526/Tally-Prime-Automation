@@ -52,6 +52,18 @@ async def upload_document(
     If the document has already been processed (SHA-256 match), returns the cached result
     and adds the 'X-Duplicate: true' response header.
     """
+    # Validate that the company_id exists in the database before processing
+    from app.models.company import Company
+    async with get_db_session() as session:
+        from sqlalchemy import select
+        company_exists_stmt = select(Company.id).where(Company.id == company_id)
+        company_exists_res = await session.execute(company_exists_stmt)
+        if company_exists_res.scalar_one_or_none() is None:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Company with ID {company_id} does not exist."
+            )
+
     # 1. Validate and sanitise filename (prevent path traversal)
     raw_filename = file.filename or "upload"
     filename = _safe_filename(raw_filename)
